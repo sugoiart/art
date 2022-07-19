@@ -2,7 +2,7 @@
 
 a repo for cool art images i find online
 
-api: https://art.hayasaka.moe/api
+api: https://sugoiapi.hayasaka.moe
 
 ## help needed
 
