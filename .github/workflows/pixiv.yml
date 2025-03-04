@@ -17,13 +17,15 @@ jobs:
 
                 steps:
                         - name: Checkout Art Repository (sparse)
-                          uses: actions/sparse-checkout@v1
+                          uses: actions/checkout@v3
                           with:
                                   repository: "sugoiart/art"
                                   token: ${{ secrets.PAT_TOKEN }}
                                   patterns: |
                                           rename.sh
                                           .github/workflows/pixiv.yml
+                                  sparse-checkout-cone-mode: false
+                                  fetch-depth: 1
 
                         - name: Setup artist folder
                           run: |
