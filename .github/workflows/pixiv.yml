@@ -16,22 +16,21 @@ jobs:
                 runs-on: ubuntu-latest
 
                 steps:
-                        - name: Checkout Art Repository
-                          uses: actions/checkout@v3
+                        - name: Checkout Art Repository (sparse)
+                          uses: actions/sparse-checkout@v1
                           with:
                                   repository: "sugoiart/art"
                                   token: ${{ secrets.PAT_TOKEN }}
-                                  sparse-checkout: |
+                                  patterns: |
                                           rename.sh
                                           .github/workflows/pixiv.yml
-                                  sparse-checkout-cone-mode: false
-                                  fetch-depth: 1
 
                         - name: Setup artist folder
                           run: |
                                   ARTIST_ID="${{ github.event.inputs.pixiv_member_id }}"
-                                  mkdir -p "$ARTIST_ID"
-                                  echo "ARTIST_DIR=$ARTIST_ID" >> $GITHUB_ENV
+                                  ARTIST_DIR="artists/$ARTIST_ID"
+                                  mkdir -p "$ARTIST_DIR"
+                                  echo "ARTIST_DIR=$ARTIST_DIR" >> $GITHUB_ENV
 
                         - name: Clone PixivUtil2
                           run: git clone https://github.com/Nandaka/PixivUtil2.git
@@ -49,8 +48,7 @@ jobs:
 
                         - name: Create Pixiv config with cookie
                           run: |
-                                  mkdir -p PixivUtil2/config
-                                  cat > PixivUtil2/config/config.ini << EOF
+                                  cat > PixivUtil2/config.ini << EOF
                                   [Network]
                                   useProxy = False
                                   proxyAddress = 
@@ -106,8 +104,8 @@ jobs:
                                   useTagsAsDir = False
 
                                   [Authentication]
-                                  username = ${{ secrets.PIXIV_USERNAME }}
-                                  password = ${{ secrets.PIXIV_PASSWORD }} 
+                                  username = 
+                                  password = 
                                   cookie = ${{ secrets.PIXIV_COOKIE }}
                                   refresh_token = 
 
@@ -119,6 +117,9 @@ jobs:
                                   overwrite = False
                                   backupOldFile = False
                                   EOF
+
+                                  # Show for debugging (hide cookie)
+                                  grep -v cookie PixivUtil2/config.ini
 
                         - name: Download from Pixiv
                           run: |
@@ -150,6 +151,10 @@ jobs:
 
                         - name: Commit and push changes
                           run: |
+                                  # We need to fetch the main branch to avoid conflicts
+                                  git fetch origin main
+                                  git checkout main
+
                                   ARTIST_ID="${{ github.event.inputs.pixiv_member_id }}"
                                   git add "${{ env.ARTIST_DIR }}"
                                   git commit -m "Add artwork from Pixiv Artist ID $ARTIST_ID" || echo "No changes to commit"
