@@ -21,7 +21,7 @@ jobs:
                           with:
                                   repository: "sugoiart/art"
                                   token: ${{ secrets.PAT_TOKEN }}
-                                  patterns: |
+                                  sparse-checkout: |
                                           rename.sh
                                           .github/workflows/pixiv.yml
                                   sparse-checkout-cone-mode: false
