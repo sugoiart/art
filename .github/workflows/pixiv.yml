@@ -19,16 +19,19 @@ jobs:
                         - name: Checkout Art Repository
                           uses: actions/checkout@v3
                           with:
-                                  fetch-depth: 0
                                   repository: "sugoiart/art"
                                   token: ${{ secrets.PAT_TOKEN }}
+                                  sparse-checkout: |
+                                          rename.sh
+                                          .github/workflows/pixiv.yml
+                                  sparse-checkout-cone-mode: false
+                                  fetch-depth: 1
 
                         - name: Setup artist folder
                           run: |
                                   ARTIST_ID="${{ github.event.inputs.pixiv_member_id }}"
-                                  ARTIST_DIR="artists/$ARTIST_ID"
-                                  mkdir -p "$ARTIST_DIR"
-                                  echo "ARTIST_DIR=$ARTIST_DIR" >> $GITHUB_ENV
+                                  mkdir -p "$ARTIST_ID"
+                                  echo "ARTIST_DIR=$ARTIST_ID" >> $GITHUB_ENV
 
                         - name: Clone PixivUtil2
                           run: git clone https://github.com/Nandaka/PixivUtil2.git
@@ -120,7 +123,7 @@ jobs:
                         - name: Download from Pixiv
                           run: |
                                   cd PixivUtil2
-                                  python PixivUtil2.py --member-id ${{ github.event.inputs.pixiv_member_id }} -x -s
+                                  python PixivUtil2.py -s 1 ${{ github.event.inputs.pixiv_member_id }} -x
 
                         - name: Verify rename.sh exists
                           run: |
