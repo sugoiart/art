@@ -1,0 +1,153 @@
+name: Download Pixiv Artist
+
+on:
+        workflow_dispatch:
+                inputs:
+                        pixiv_member_id:
+                                description: "Pixiv Member ID to download"
+                                required: true
+                        process_recursive:
+                                description: "Process files in subdirectories (y/n)"
+                                required: true
+                                default: "y"
+
+jobs:
+        download-and-process:
+                runs-on: ubuntu-latest
+
+                steps:
+                        - name: Checkout Art Repository
+                          uses: actions/checkout@v3
+                          with:
+                                  fetch-depth: 0
+                                  repository: "sugoiart/art"
+                                  token: ${{ secrets.PAT_TOKEN }}
+
+                        - name: Setup artist folder
+                          run: |
+                                  ARTIST_ID="${{ github.event.inputs.pixiv_member_id }}"
+                                  ARTIST_DIR="artists/$ARTIST_ID"
+                                  mkdir -p "$ARTIST_DIR"
+                                  echo "ARTIST_DIR=$ARTIST_DIR" >> $GITHUB_ENV
+
+                        - name: Clone PixivUtil2
+                          run: git clone https://github.com/Nandaka/PixivUtil2.git
+
+                        - name: Setup Python
+                          uses: actions/setup-python@v4
+                          with:
+                                  python-version: "3.11"
+
+                        - name: Install Dependencies
+                          run: |
+                                  cd PixivUtil2
+                                  pip install -r requirements.txt
+                                  sudo apt-get update && sudo apt-get install -y ffmpeg imagemagick
+
+                        - name: Create Pixiv config with cookie
+                          run: |
+                                  mkdir -p PixivUtil2/config
+                                  cat > PixivUtil2/config/config.ini << EOF
+                                  [Network]
+                                  useProxy = False
+                                  proxyAddress = 
+                                  useragent = Mozilla/5.0
+                                  useRobots = True
+                                  timeout = 60
+                                  retry = 3
+                                  retryWait = 5
+                                  downloadDelay = 5
+                                  checkNewVersion = False
+                                  notifyBetaVersion = False
+                                  openNewVersion = False
+                                  enableSSLVerification = True
+
+                                  [Debug]
+                                  logLevel = INFO
+                                  enableDump = False
+                                  skipDumpFilter = 
+                                  dumpMediumPage = False
+                                  dumpTagSearchPage = False
+                                  debugHttp = False
+                                  disableLog = False
+                                  disableScreenClear = False
+
+                                  [Settings]
+                                  downloadListDirectory = .
+                                  useList = False
+                                  processFromDb = True
+                                  rootDirectory = ${{ github.workspace }}/${{ env.ARTIST_DIR }}
+                                  downloadAvatar = False
+                                  useSuppressTags = False
+                                  tagsLimit = -1
+                                  writeImageJSON = False
+                                  writeImageInfo = False
+                                  writeRawJSON = False
+                                  includeSeriesJSON = False
+                                  writeImageXMP = False
+                                  writeImageXMPPerImage = False
+                                  verifyImage = False
+                                  writeUrlInDescription = False
+                                  stripHTMLTagsFromCaption = False
+                                  setLastModified = True
+                                  useLocalTimezone = False
+
+                                  [Filename]
+                                  filenameFormat = %urlFilename% - %title%
+                                  filenameMangaFormat = %urlFilename% - %title%
+                                  filenameInfoFormat = %urlFilename% - %title%
+                                  filenameMangaInfoFormat = %urlFilename% - %title%
+                                  filenameSeriesJSON = %manga_series_id% - %manga_series_title%
+                                  tagsSeparator = , 
+                                  createMangaDir = False
+                                  useTagsAsDir = False
+
+                                  [Authentication]
+                                  username = 
+                                  password = 
+                                  cookie = ${{ secrets.PIXIV_COOKIE }}
+                                  refresh_token = 
+
+                                  [Pixiv]
+                                  numberOfPage = 0
+                                  r18mode = False
+
+                                  [DownloadControl]
+                                  overwrite = False
+                                  backupOldFile = False
+                                  EOF
+
+                        - name: Download from Pixiv
+                          run: |
+                                  cd PixivUtil2
+                                  python PixivUtil2.py --member-id ${{ github.event.inputs.pixiv_member_id }} -x -s
+
+                        - name: Verify rename.sh exists
+                          run: |
+                                  if [ ! -f "rename.sh" ]; then
+                                    echo "Error: rename.sh not found in the repository"
+                                    exit 1
+                                  fi
+                                  chmod +x rename.sh
+
+                        - name: Prepare for rename.sh
+                          run: |
+                                  # Pre-answer the recursive question
+                                  echo "${{ github.event.inputs.process_recursive }}" > /tmp/answer
+
+                        - name: Run rename.sh
+                          run: |
+                                  # Simulate user input for the script
+                                  cat /tmp/answer | ./rename.sh "${{ env.ARTIST_DIR }}"
+
+                        - name: Configure Git
+                          run: |
+                                  git config --global user.name "GitHub Actions Bot"
+                                  git config --global user.email "actions@github.com"
+
+                        - name: Commit and push changes
+                          run: |
+                                  ARTIST_ID="${{ github.event.inputs.pixiv_member_id }}"
+                                  git add "${{ env.ARTIST_DIR }}"
+                                  git commit -m "Add artwork from Pixiv Artist ID $ARTIST_ID" || echo "No changes to commit"
+                                  git push
