@@ -106,8 +106,8 @@ jobs:
                                   useTagsAsDir = False
 
                                   [Authentication]
-                                  username = 
-                                  password = 
+                                  username = ${{ secrets.PIXIV_USERNAME }}
+                                  password = ${{ secrets.PIXIV_PASSWORD }} 
                                   cookie = ${{ secrets.PIXIV_COOKIE }}
                                   refresh_token = 
 
