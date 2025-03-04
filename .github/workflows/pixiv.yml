@@ -54,7 +54,7 @@ jobs:
                                   [Network]
                                   useProxy = False
                                   proxyAddress = 
-                                  useragent = Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:137.0) Gecko/20100101 Firefox/137.0
+                                  useragent = Mozilla/5.0
                                   useRobots = True
                                   timeout = 60
                                   retry = 3
