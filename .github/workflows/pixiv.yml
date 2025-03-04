@@ -110,6 +110,8 @@ jobs:
                                   password = 
                                   cookie = ${{ secrets.PIXIV_COOKIE }}
                                   refresh_token = 
+                                  cf_clearance = $${{ secrets.CF_CLEARANCE }}
+                                  cf_bm = ${{ secrets.CF_BM }}
 
                                   [Pixiv]
                                   numberOfPage = 0
