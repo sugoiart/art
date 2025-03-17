@@ -48,27 +48,10 @@ jobs:
                                   pip install -r requirements.txt
                                   sudo apt-get update && sudo apt-get install -y ffmpeg imagemagick
 
-                        - name: Install and Setup Cloudflare WARP
-                          run: |
-                                  # Add Cloudflare repository
-                                  curl https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
-                                  echo "deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
-
-                                  # Install Cloudflare WARP
-                                  sudo apt-get update && sudo apt-get install -y cloudflare-warp
-
-                                  # Register and connect to WARP
-                                  warp-cli --accept-tos registration new
-                                  warp-cli --accept-tos mode warp+doh
-                                  warp-cli --accept-tos connect
-
-                                  # Wait for connection to establish
-                                  sleep 5
-
-                                  # Verify WARP connection
-                                  warp-cli status
-                                  echo "Current IP after WARP:"
-                                  curl -s https://ipinfo.io/ip
+                        - name: Set up WARP connection
+                          uses: sebst/actions-warp@v1
+                          with:
+                                  tos: YES # Required. Set to YES to accept the Terms of Service of Cloudflare.
 
                         - name: Create Pixiv config with cookie
                           run: |
