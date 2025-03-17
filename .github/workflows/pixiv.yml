@@ -58,8 +58,8 @@ jobs:
                                   sudo apt-get update && sudo apt-get install -y cloudflare-warp
 
                                   # Register and connect to WARP
-                                  warp-cli register
-                                  warp-cli set-mode warp
+                                  warp-cli registration new
+                                  warp-cli mode warp
                                   warp-cli connect
 
                                   # Wait for connection to establish
