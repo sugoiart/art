@@ -37,10 +37,11 @@ jobs:
                         - name: Clone PixivUtil2
                           run: git clone https://github.com/Nandaka/PixivUtil2.git
 
-                        - name: Setup Python
-                          run: |
-                                  sudo apt update
-                                  sudo apt install -y python3.11
+                        - name: Setup up uv
+                          uses: astral-sh/setup-uv@v1
+
+                        - name: Setup up Python
+                          run: uv python install 3.11 
 
                         - name: Install Dependencies
                           run: |
