@@ -1,4 +1,3 @@
-# .github/workflows/rename-on-command.yml
 name: Rename Files on Command
 
 on:
@@ -25,35 +24,47 @@ jobs:
               content: 'rocket'
             });
 
-      - name: Checkout Default Branch
+      - name: Checkout PR Branch (sparse mode, empty)
         uses: actions/checkout@v4
         with:
-          repository: "sugoiart/art"
+          repository: sugoiart/art
           token: ${{ secrets.PAT_TOKEN }}
-          fetch-depth: 1
+          ref: refs/pull/${{ github.event.issue.number }}/head
+          fetch-depth: 0
+          sparse-checkout: |
+            .github   # keep workflows folder available
+          sparse-checkout-cone-mode: false
 
-      - name: Switch to PR Branch
-        id: get_branch
-        env:
-          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+      - name: Get Changed Directories
+        id: dirs
         run: |
-          BRANCH_NAME=$(gh pr view ${{ github.event.issue.number }} --json headRefName -q .headRefName)
-          git fetch origin $BRANCH_NAME
-          git checkout $BRANCH_NAME
-          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          CHANGED_DIRS=$(git diff --name-only origin/main...HEAD | xargs -n1 dirname | sort -u)
+          echo "Changed directories:"
+          echo "$CHANGED_DIRS"
+          echo "dirs=$CHANGED_DIRS" >> $GITHUB_OUTPUT
 
-      # 3. Run the rename script
-      - name: Run rename.sh
+      - name: Sparse-checkout only changed dirs
         run: |
-          ARTIST_ID=$(echo "${{ steps.get_branch.outputs.branch }}" | awk -F'-' '{print $NF}')
-          echo "Running rename for Artist ID: $ARTIST_ID"
-          echo "y" | ./rename.sh "$ARTIST_ID"
+          git sparse-checkout set --no-cone ${{ steps.dirs.outputs.dirs }}
+          git checkout
+
+      - name: Run rename.sh on PR directories
+        run: |
+          CHANGED_DIRS="${{ steps.dirs.outputs.dirs }}"
+          ARTIST_ID=$(echo "${GITHUB_HEAD_REF}" | awk -F'-' '{print $NF}')
+
+          for d in $CHANGED_DIRS; do
+            if [[ -d "$d" ]]; then
+              echo "Processing dir: $d"
+              echo "y" | ./rename.sh "$d"
+            fi
+          done
 
       - name: Commit Renamed Files
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           if [[ -n $(git status --porcelain) ]]; then
             echo "Changes detected, committing renamed files..."
             git add .
@@ -62,3 +73,4 @@ jobs:
           else
             echo "No file changes to commit."
           fi
+
