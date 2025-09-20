@@ -31,6 +31,7 @@ jobs:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           BRANCH_NAME=$(gh pr view ${{ github.event.issue.number }} --json headRefName -q .headRefName)
+          echo "Branch is: $BRANCH_NAME"
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
       - name: Checkout PR Branch
