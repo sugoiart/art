@@ -30,6 +30,7 @@ jobs:
         with:
           repository: "sugoiart/art"
           token: ${{ secrets.PAT_TOKEN }}
+          fetch-depth: 1
 
       - name: Switch to PR Branch
         id: get_branch
