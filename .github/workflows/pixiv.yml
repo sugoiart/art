@@ -157,9 +157,8 @@ jobs:
 
                         - name: Commit and push changes
                           run: |
-                                  # We need to fetch the main branch to avoid conflicts
-                                  git fetch origin main
-                                  git checkout main
+                                  git fetch origin master
+                                  git checkout master
 
                                   ARTIST_ID="${{ github.event.inputs.pixiv_member_id }}"
                                   git add "${{ env.ARTIST_DIR }}"
