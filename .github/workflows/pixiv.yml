@@ -160,6 +160,8 @@ jobs:
                                   git fetch origin master
                                   git checkout master
 
+                                  git sparse-checkout set --no-cone 'rename.sh' '.github/workflows/pixiv.yml' "${{ env.ARTIST_DIR }}"
+
                                   ARTIST_ID="${{ github.event.inputs.pixiv_member_id }}"
                                   git add "${{ env.ARTIST_DIR }}"
                                   git commit -m "Add artwork from Pixiv Artist ID $ARTIST_ID" || echo "No changes to commit"
