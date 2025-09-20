@@ -30,7 +30,7 @@ jobs:
                         - name: Setup artist folder
                           run: |
                                   ARTIST_ID="${{ github.event.inputs.pixiv_member_id }}"
-                                  ARTIST_DIR="artists/$ARTIST_ID"
+                                  ARTIST_DIR="$ARTIST_ID"
                                   mkdir -p "$ARTIST_DIR"
                                   echo "ARTIST_DIR=$ARTIST_DIR" >> $GITHUB_ENV
 
