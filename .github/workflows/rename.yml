@@ -1,0 +1,61 @@
+name: Rename Files on Command
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  rename-on-command:
+    runs-on: ubuntu-latest 
+    
+    if: |
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '/rename') &&
+      (github.event.author_association == 'OWNER' || github.event.author_association == 'COLLABORATOR')
+
+    steps:
+      - name: Add Reaction to Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: 'rocket'
+            });
+
+      - name: Get Branch Name
+        id: get_branch
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          BRANCH_NAME=$(gh pr view ${{ github.event.issue.number }} --json headRefName -q .headRefName)
+          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Checkout PR Branch
+        uses: actions/checkout@v4
+        with:
+          repository: "sugoiart/art"
+          token: ${{ secrets.PAT_TOKEN }}
+          ref: ${{ steps.get_branch.outputs.branch }}
+
+      - name: Run rename.sh
+        run: |
+          ARTIST_ID=$(echo "${{ steps.get_branch.outputs.branch }}" | awk -F'-' '{print $NF}')
+          echo "Running rename for Artist ID: $ARTIST_ID"
+          echo "y" | ./rename.sh "$ARTIST_ID"
+
+      - name: Commit Renamed Files
+        run: |
+          git config --global user.name "jckli"
+          git config --global user.email "me@jackli.dev"
+          
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "Changes detected, committing renamed files..."
+            git add .
+            git commit -m "chore: Automatically rename files"
+            git push
+          else
+            echo "No file changes to commit."
+          fi

@@ -152,8 +152,8 @@ jobs:
 
                         - name: Configure Git
                           run: |
-                                  git config --global user.name "GitHub Actions Bot"
-                                  git config --global user.email "actions@github.com"
+                                  git config --global user.name "jckli"
+                                  git config --global user.email "me@jackli.dev"
 
                         - name: Commit and push changes
                           env:
