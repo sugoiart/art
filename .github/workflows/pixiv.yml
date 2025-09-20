@@ -156,13 +156,22 @@ jobs:
                                   git config --global user.email "actions@github.com"
 
                         - name: Commit and push changes
+                          env:
+                                  GH_TOKEN: ${{ secrets.PAT_TOKEN }} 
                           run: |
-                                  git fetch origin master
-                                  git checkout master
-
-                                  git sparse-checkout set --no-cone 'rename.sh' '.github/workflows/pixiv.yml' "${{ env.ARTIST_DIR }}"
-
                                   ARTIST_ID="${{ github.event.inputs.pixiv_member_id }}"
-                                  git add "${{ env.ARTIST_DIR }}"
-                                  git commit -m "Add artwork from Pixiv Artist ID $ARTIST_ID" || echo "No changes to commit"
-                                  git push
+                                  BRANCH_NAME="pixiv/review-$ARTIST_ID"
+                                  
+                                  git checkout -b $BRANCH_NAME
+                                  
+                                  git sparse-checkout set --no-cone 'rename.sh' '.github/workflows' "$ARTIST_ID"
+                                  git add "$ARTIST_ID"
+                                  
+                                  git commit -m "feat: Add artwork for artist $ARTIST_ID"
+                                  
+                                  git push --set-upstream origin $BRANCH_NAME
+                                  
+                                  gh pr create \
+                                    --title "Review artwork for artist $ARTIST_ID" \
+                                    --body "Please review the following images from the artist." \
+                                    --base master
