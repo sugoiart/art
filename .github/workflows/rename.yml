@@ -1,3 +1,4 @@
+# .github/workflows/rename-on-command.yml
 name: Rename Files on Command
 
 on:
@@ -6,8 +7,7 @@ on:
 
 jobs:
   rename-on-command:
-    runs-on: ubuntu-latest 
-    
+    runs-on: self-hosted
     if: |
       github.event.issue.pull_request &&
       contains(github.event.comment.body, '/rename') &&
@@ -25,22 +25,23 @@ jobs:
               content: 'rocket'
             });
 
-      - name: Get Branch Name
+      - name: Checkout Default Branch
+        uses: actions/checkout@v4
+        with:
+          repository: "sugoiart/art"
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Switch to PR Branch
         id: get_branch
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           BRANCH_NAME=$(gh pr view ${{ github.event.issue.number }} --json headRefName -q .headRefName)
-          echo "Branch is: $BRANCH_NAME"
+          git fetch origin $BRANCH_NAME
+          git checkout $BRANCH_NAME
           echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
-      - name: Checkout PR Branch
-        uses: actions/checkout@v4
-        with:
-          repository: "sugoiart/art"
-          token: ${{ secrets.PAT_TOKEN }}
-          ref: ${{ steps.get_branch.outputs.branch }}
-
+      # 3. Run the rename script
       - name: Run rename.sh
         run: |
           ARTIST_ID=$(echo "${{ steps.get_branch.outputs.branch }}" | awk -F'-' '{print $NF}')
@@ -49,8 +50,8 @@ jobs:
 
       - name: Commit Renamed Files
         run: |
-          git config --global user.name "jckli"
-          git config --global user.email "me@jackli.dev"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
           if [[ -n $(git status --porcelain) ]]; then
             echo "Changes detected, committing renamed files..."
